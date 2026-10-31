@@ -1,1 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城灵设定数据库 - City Soul Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
 
+        /* 顶部横轴 */
+        .header-nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 70px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+        }
+
+        @media (min-width: 768px) {
+            .header-nav { padding: 0 2rem; }
+        }
+
+        .nav-btn {
+            height: 100%;
+            padding: 0 0.85rem;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        @media (min-width: 768px) {
+            .nav-btn { padding: 0 1.5rem; font-size: 0.95rem; }
+        }
+
+        .nav-btn:hover { color: #0284c7; background: #f0f9ff; }
+        .nav-btn.active {
+            color: #0284c7;
+            border-bottom-color: #0284c7;
+            background: rgba(2, 132, 199, 0.05);
+        }
+
+        /* 右侧纵轴 (桌面端为右侧) */
+        .right-sidebar {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .right-sidebar {
+                display: flex;
+                width: 240px;
+                height: calc(100vh - 70px);
+                position: fixed;
+                right: 0;
+                top: 70px;
+                background: #ffffff;
+                border-left: 1px solid #e2e8f0;
+                padding: 2rem 1.5rem;
+                z-index: 50;
+                flex-direction: column; gap: 1rem;
+            }
+        }
+
+        .sidebar-item {
+            width: 100%; padding: 0.75rem 1rem; border-radius: 1rem; font-weight: 900;
+            color: #475569; background: #f8fafc; border: 2px solid #f1f5f9;
+            text-align: center; transition: all 0.2s; font-size: 0.9rem; cursor: pointer;
+        }
+
+        @media (min-width: 1024px) {
+            .sidebar-item { padding: 1.25rem; font-size: 1rem; }
+        }
+
+        .sidebar-item:hover { border-color: #bae6fd; color: #0284c7; transform: translateY(-2px); }
+        .sidebar-item.active {
+            background: #0284c7; color: #ffffff; border-color: #0284c7;
+            box-shadow: 0 8px 16px -4px rgba(2, 132, 199, 0.3);
+        }
+
+        /* 主内容区响应式调整 */
+        .main-content {
+            margin-top: 70px;
+            margin-right: 0;
+            padding: 1.25rem;
+            min-height: calc(100vh - 70px);
+        }
+
+        @media (min-width: 768px) {
+            .main-content { padding: 2.5rem; }
+        }
+
+        @media (min-width: 1024px) {
+            .main-content { margin-right: 240px; padding: 3rem; }
+        }
+
+        .view-content { display: none; animation: fadeIn 0.4s ease-out forwards; }
+        .view-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 组件样式 */
+        .glass-panel { 
+            background: white; 
+            border: 1px solid #e2e8f0; 
+            border-radius: 1.25rem; 
+            padding: 1.25rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
+        }
+
+        @media (min-width: 768px) {
+            .glass-panel { border-radius: 1.5rem; padding: 2.5rem; }
+        }
+        
+        .spirit-card {
+            aspect-ratio: 2 / 3; background: #ffffff; border: 6px solid #f1f5f9; border-radius: 1.25rem;
+            position: relative; transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        @media (min-width: 768px) {
+            .spirit-card { border-width: 8px; border-radius: 1.5rem; }
+        }
+        .spirit-card:hover { transform: translateY(-8px); border-color: #bae6fd; }
+
+        .type-card {
+            background: white; border: 1px solid #cbd5e1; border-radius: 0.75rem; padding: 1rem;
+            transition: all 0.2s; cursor: pointer;
+        }
+        @media (min-width: 768px) {
+            .type-card { border-radius: 1rem; padding: 1.5rem; }
+        }
+        .type-card:hover { border-color: #0284c7; transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+
+        .work-display-card.loading {
+            border: 2px dashed #e2e8f0; background: #f8fafc; border-radius: 1.25rem;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 3rem 1.5rem; color: #94a3b8;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- 弹窗组件 -->
+    <div id="modal-overlay" class="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="modal-container" class="bg-white max-w-xl w-full rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden shadow-2xl scale-95 transition-transform duration-300 ease-out" onclick="event.stopPropagation()">
+            <div id="modal-header-bg" class="p-6 sm:p-8 pb-5 flex justify-between items-start bg-gradient-to-br from-sky-500 to-indigo-600 text-white">
+                <div>
+                    <span id="modal-tag" class="text-[10px] font-black uppercase tracking-[0.2em] bg-white/20 px-2 py-1 rounded mb-2 inline-block">SYSTEM ARCHIVE</span>
+                    <h3 id="modal-title" class="text-2xl sm:text-3xl font-bold">解析内容</h3>
+                </div>
+                <button onclick="closeModal()" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="p-6 sm:p-8">
+                <div id="modal-body" class="space-y-4 sm:space-y-6">
+                    <section>
+                        <h4 class="text-sky-600 font-bold mb-2 flex items-center"><i class="fa-solid fa-book-open mr-2"></i> 详细功能说明</h4>
+                        <p id="modal-desc" class="text-slate-600 leading-relaxed text-sm sm:text-base"></p>
+                    </section>
+                    <section class="bg-slate-50 p-4 sm:p-6 rounded-2xl border border-slate-100">
+                        <h4 class="text-indigo-600 font-bold mb-2 flex items-center text-xs sm:text-sm"><i class="fa-solid fa-swords mr-2"></i> 核心价值与备注</h4>
+                        <p id="modal-value" class="text-slate-700 font-medium italic text-xs sm:text-sm"></p>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 顶部横轴与导航条 -->
+    <header class="header-nav justify-between">
+        <div class="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0" onclick="handleNav('home')">
+            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-sky-600 rounded-xl flex items-center justify-center font-bold text-white text-lg sm:text-xl shadow-lg shadow-sky-200">灵</div>
+            <span class="font-bold tracking-widest text-lg sm:text-xl text-sky-900 font-[Cinzel]">CITY SOUL</span>
+        </div>
+        
+        <!-- 导航菜单 -->
+        <nav class="flex h-full overflow-x-auto no-scrollbar scroll-smooth">
+            <button onclick="handleNav('home')" class="nav-btn active" data-nav="home">首页概览</button>
+            <button onclick="handleNav('growth')" class="nav-btn" data-nav="growth">生命规律</button>
+            <button onclick="handleNav('powers')" class="nav-btn" data-nav="powers">灵力体系</button>
+            <button onclick="handleNav('cards')" class="nav-btn" data-nav="cards">灵牌系统</button>
+            <button onclick="handleNav('about-work')" class="nav-btn lg:hidden" data-nav="about-work">关于作品</button>
+        </nav>
+    </header>
+
+    <!-- 右侧纵轴 -->
+    <aside class="right-sidebar">
+        <button onclick="handleNav('about-work')" class="sidebar-item" data-nav="about-work">关于作品</button>
+    </aside>
+
+    <main class="main-content">
+        <!-- 1. 首页 -->
+        <div id="view-home" class="view-content active">
+            <h1 class="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 text-slate-900">核心构造</h1>
+            <p class="text-slate-500 mb-6 sm:mb-8 uppercase tracking-widest text-xs sm:text-sm font-bold">Core Structure Archive</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+                <div class="glass-panel border-l-4 sm:border-l-8 border-sky-500">
+                    <i class="fa-solid fa-brain text-3xl sm:text-4xl text-sky-600 mb-4 sm:mb-6"></i>
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mb-2 sm:mb-3">意识体 Consciousness</h3>
+                    <p class="text-slate-600 text-sm sm:text-base leading-relaxed">城灵的核心自我，决定了灵力的后天衍生方向。通常以“人型”为预设坐标。</p>
+                </div>
+                <div class="glass-panel border-l-4 sm:border-l-8 border-amber-500">
+                    <i class="fa-solid fa-atom text-3xl sm:text-4xl text-amber-600 mb-4 sm:mb-6"></i>
+                    <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mb-2 sm:mb-3">灵核 Spiritual Core</h3>
+                    <p class="text-slate-600 text-sm sm:text-base leading-relaxed">承载灵力的容器。结构稳定性直接影响生理状态。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 生命规律 -->
+        <div id="view-growth" class="view-content">
+            <h1 class="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 text-slate-900">生命成长规律</h1>
+            <p class="text-slate-500 mb-6 sm:mb-8 uppercase tracking-widest text-xs sm:text-sm font-bold">Growth & Synchronization</p>
+            <div class="glass-panel mb-6 sm:mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12">
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-emerald-700 mb-2 sm:mb-4"><i class="fa-solid fa-clock-rotate-left mr-2"></i> 年 (History)</h3>
+                        <p class="text-slate-600 text-sm sm:text-base leading-relaxed">历史长度（资历）。决定了城灵的阅历与对历史灵力的掌控力。</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-sky-700 mb-2 sm:mb-4"><i class="fa-solid fa-user mr-2"></i> 岁 (Age)</h3>
+                        <p class="text-slate-600 text-sm sm:text-base leading-relaxed">生理与心理年龄。决定了心智形态、性格及对现代灵力的承载力。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 bg-slate-200 rounded-xl border-l-4 border-slate-500 text-slate-700 text-xs sm:text-sm italic">
+                * 成长停滞：若前期成长过快，后期青春期会剧烈放缓。
+            </div>
+        </div>
+
+        <!-- 3. 灵力体系 -->
+        <div id="view-powers" class="view-content">
+            <h1 class="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 text-slate-900">灵力体系</h1>
+            <p class="text-slate-500 mb-6 sm:mb-8 uppercase tracking-widest text-xs sm:text-sm font-bold">Spiritual Power System</p>
+            
+            <!-- Excel 灵力类型与调度机制 原样表格 -->
+            <div class="glass-panel mb-6 sm:mb-8 overflow-hidden">
+                <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4 flex items-center">
+                    <i class="fa-solid fa-table-list text-sky-600 mr-2 sm:mr-3"></i>灵力类型与调度机制
+                </h3>
+                <div class="overflow-x-auto -mx-1 sm:mx-0">
+                    <table class="w-full border-collapse border border-slate-300 text-xs sm:text-sm text-left min-w-[600px]">
+                        <thead>
+                            <tr class="bg-slate-100">
+                                <th class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-800 w-[120px]">灵力类型</th>
+                                <th class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-800">来源与特性</th>
+                                <th class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-800 w-[130px]">能量占比</th>
+                                <th class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-800">调度机制（本能行为）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-900">一型（地脉）</td>
+                                <td class="border border-slate-300 p-2 sm:p-3"><strong class="font-bold">天生天赋。</strong>源自自然地理（如水、土），完美契合，诞生即有。</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-sky-700">强制占用 50%</td>
+                                <td class="border border-slate-300 p-2 sm:p-3">城灵的存在根基，不可轻易动用，否则会导致意识体崩溃。</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-900">二型（成长）</td>
+                                <td class="border border-slate-300 p-2 sm:p-3"><strong class="font-bold">后天发展（非现代）。</strong>源自古代城防、传统工艺、商贸历史。</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-emerald-700">剩余 50% 的分配</td>
+                                <td class="border border-slate-300 p-2 sm:p-3"><strong class="font-bold">作为缓冲器。</strong>当三型需求大时，本能会调动二型能量去补足。</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-slate-900">三型（演化）</td>
+                                <td class="border border-slate-300 p-2 sm:p-3"><strong class="font-bold">完全现代化。</strong>源自高新技术（光电、数据）、现代产业。</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-indigo-700">剩余 50% 的分配</td>
+                                <td class="border border-slate-300 p-2 sm:p-3"><strong class="font-bold">作为主攻器。</strong>若二型能量不足，本能会强行透支剩余空间，甚至动摇一型核心。</td>
+                            </tr>
+                            <tr class="bg-rose-50">
+                                <td class="border border-slate-300 p-2 sm:p-3 font-bold text-rose-900">磨合期</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 text-rose-900">获得二、三型新灵力时，会有一段不稳定的过度时间（生理排斥或情绪波动）。</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 text-rose-900 font-bold">—</td>
+                                <td class="border border-slate-300 p-2 sm:p-3 text-rose-900"><strong class="font-bold">与意愿无关。</strong>身体会根据环境自动调整天平，可能导致意识与行为背离。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 切换标签区域 -->
+            <div class="flex flex-wrap gap-2 mb-6 sm:mb-8">
+                <button onclick="filterTier(1)" class="tier-filter px-4 sm:px-6 py-2 rounded-xl bg-amber-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all">一型：地脉</button>
+                <button onclick="filterTier(2)" class="tier-filter px-4 sm:px-6 py-2 rounded-xl bg-white text-slate-600 border font-bold text-xs sm:text-sm transition-all">二型：演化</button>
+                <button onclick="filterTier(3)" class="tier-filter px-4 sm:px-6 py-2 rounded-xl bg-white text-slate-600 border font-bold text-xs sm:text-sm transition-all">三型：异质</button>
+            </div>
+            <div id="element-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4"></div>
+        </div>
+
+        <!-- 4. 灵牌系统 -->
+        <div id="view-cards" class="view-content">
+            <h1 class="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 text-slate-900">灵牌系统</h1>
+            <p class="text-slate-500 mb-6 sm:mb-8 uppercase tracking-widest text-xs sm:text-sm font-bold">Card Templates</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8">
+                <div class="spirit-card p-6 sm:p-8 group" onclick="openModal({name: '专属锁定', desc: '灵牌具有唯一性，由城灵的本源意识凝聚而成。', value: '核心特性：不可转让。', tier: 'card'})">
+                    <i class="fa-solid fa-fingerprint text-3xl sm:text-4xl mb-3 sm:mb-4 text-indigo-600"></i>
+                    <h4 class="font-bold text-lg sm:text-xl">专属锁定</h4>
+                </div>
+                <div class="spirit-card p-6 sm:p-8 group" onclick="openModal({name: '全盛模板', desc: '启动瞬间修正灵压至设定数值。', value: '战术价值：忽视环境惩罚。', tier: 'card'})">
+                    <i class="fa-solid fa-bolt text-3xl sm:text-4xl mb-3 sm:mb-4 text-sky-600"></i>
+                    <h4 class="font-bold text-lg sm:text-xl">全盛模板</h4>
+                </div>
+                <div class="spirit-card p-6 sm:p-8 group border-rose-200" onclick="openModal({name: '遗留灵牌', desc: '暴力抽取地脉能量。', value: '副作用：灵核过热。', tier: 'card'})">
+                    <i class="fa-solid fa-triangle-exclamation text-3xl sm:text-4xl mb-3 sm:mb-4 text-rose-600"></i>
+                    <h4 class="font-bold text-lg sm:text-xl">遗留灵牌</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 关于作品 -->
+        <div id="view-about-work" class="view-content">
+            <h1 class="text-3xl sm:text-5xl font-black mb-1 sm:mb-2 text-slate-900">关于作品</h1>
+            <p class="text-slate-500 mb-6 sm:mb-8 uppercase tracking-widest text-xs sm:text-sm font-bold">Project Info</p>
+            
+            <!-- 作者的话 -->
+            <div class="glass-panel mb-6 sm:mb-8 border-l-4 sm:border-l-8 border-sky-500 bg-sky-50/30">
+                <h3 class="text-xl sm:text-2xl font-bold text-sky-900 mb-3 sm:mb-4 flex items-center">
+                    <i class="fa-solid fa-comment-dots mr-2 sm:mr-3 text-sky-600"></i>作者的话 (Author's Note)
+                </h3>
+                <div class="text-slate-700 leading-relaxed space-y-3 text-sm sm:text-base">
+                    <p>
+                        这个世界观之所以能够构成，是因为汐染刚开始搞城拟的时候很常听到“城灵”这个词，所以就引发了一系列关于灵力的奇思妙想。
+                    </p>
+                    <p>
+                        再者是关于战争，虽然此世界观仍建立在现实历史之上，但我会想，如果城市拥有“灵力”如此强大的力量，在面对战争时或许就不会如此无能为力。
+                    </p>
+                    <p class="pt-2 font-medium text-sky-800 italic">
+                        “尽管这是个不成熟且中二的作品，但这代表我有广阔的进步空间。也欢迎友好地向我提出改良建议！”
+                    </p>
+                </div>
+            </div>
+
+            <!-- 创作状态 -->
+            <div class="glass-panel mb-8 sm:mb-12">
+                <h3 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4 flex items-center">
+                    <i class="fa-solid fa-feather-pointed mr-2 sm:mr-3 text-sky-600"></i>创作状态
+                </h3>
+                <p class="text-slate-600 leading-relaxed mb-4 text-sm sm:text-base">
+                    关于《灵》目前由“汐染”进行创作，创作主要内容为绝对不连载的(?)短篇小说。
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-full text-xs font-bold">概念孵化中</span>
+                    <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">设定扩充中</span>
+                </div>
+            </div>
+
+            <!-- 作品展示区 -->
+            <h2 class="text-2xl sm:text-3xl font-black mb-4 sm:mb-6 text-slate-800">作品展示 Gallery</h2>
+            <div class="work-display-card loading">
+                <i class="fa-solid fa-images text-3xl sm:text-4xl mb-3"></i>
+                <p class="font-bold text-slate-600 text-sm sm:text-base">作品准备中</p>
+                <p class="text-xs text-slate-400 mt-1">未来图片将在此上传展示</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const powerData = [
+            { tier: 1, name: '金', color: 'amber-500', desc: '强化躯体、灵能传导。', value: '防御与锋利度，可使情绪冷静，常见于城市。' },
+            { tier: 1, name: '木', color: 'emerald-500', desc: '生命再生、操纵植被。', value: '持续战斗与修复力，常见于城市。' },
+            { tier: 1, name: '水', color: 'blue-500', desc: '形态变化、气息隐匿。', value: '能量调度灵活性，常见于临江滨海城市。' },
+            { tier: 1, name: '火', color: 'red-500', desc: '纯化能量、爆燃。', value: '侵略性底色，常见于城市。' },
+            { tier: 1, name: '土', color: 'amber-800', desc: '改变地形、物理防御。', value: '稳定地脉补给，常见于中原地区城市。' },
+            { tier: 2, name: '商', color: 'rose-500', desc: '等价交换、建立契约。', value: '策略型干扰，当城市商业发达或形成大型市街时，易获得此类灵力。' },
+            { tier: 2, name: '防', color: 'indigo-500', desc: '文明屏障、伤害吸收。', value: '保护核心防止反噬，易获得此类灵力。' },
+            { tier: 2, name: '民', color: 'cyan-500', desc: '精神防御、稳固意识。', value: '抵御数据化冷酷感，易获得此类灵力。' },
+            { tier: 2, name: '器', color: 'slate-500', desc: '灵力具现化、兵刃。', value: '增加打击精准度，易获得此类灵力。' },
+            { tier: 2, name: '药', color: 'emerald-600', desc: '内部調理、平衡灵压。', value: '增强耐力与防御，易获得此类灵力。' },
+            { tier: 3, name: '电', color: 'blue-600', desc: '高频脉冲、电磁穿透。', value: '瞬间瘫痪灵力路径。' },
+            { tier: 3, name: '数', color: 'violet-600', desc: '逻辑覆盖、算法预判。', value: '修改区域规则。' },
+            { tier: 3, name: '化', color: 'orange-600', desc: '工业腐蚀、工业灵能。', value: '穿透传统二型防御。' },
+            { tier: 3, name: '轨', color: 'gray-700', desc: '绝对动能、轨道加速。', value: '地脉级震荡冲击。' },
+            { tier: 3, name: '空', color: 'purple-800', desc: '空间跳跃、维度传输。', value: '忽视距离打击。' }
+        ];
+
+        function renderElements(tier) {
+            const grid = document.getElementById('element-grid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            powerData.filter(p => p.tier === tier).forEach(item => {
+                const card = document.createElement('div');
+                card.className = `type-card border-t-4 border-${item.color}`;
+                card.onclick = () => openModal(item);
+                card.innerHTML = `<h4 class="font-bold text-slate-800 mb-1 text-base sm:text-lg">${item.name}</h4><p class="text-[11px] sm:text-xs text-slate-500">${item.desc}</p>`;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterTier(tier) {
+            document.querySelectorAll('.tier-filter').forEach((btn, idx) => {
+                btn.className = (idx + 1 === tier) ? `tier-filter px-4 sm:px-6 py-2 rounded-xl bg-sky-600 text-white font-bold text-xs sm:text-sm shadow-md transition-all` : `tier-filter px-4 sm:px-6 py-2 rounded-xl bg-white text-slate-600 border font-bold text-xs sm:text-sm transition-all`;
+            });
+            renderElements(tier);
+        }
+
+        function handleNav(viewId) {
+            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
+            document.getElementById('view-' + viewId)?.classList.add('active');
+            document.querySelectorAll('.nav-btn, .sidebar-item').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll(`[data-nav="${viewId}"]`).forEach(btn => btn.classList.add('active'));
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const overlay = document.getElementById('modal-overlay');
+        function openModal(item) {
+            document.getElementById('modal-title').innerText = item.name;
+            document.getElementById('modal-desc').innerText = item.desc;
+            document.getElementById('modal-value').innerText = item.value;
+            overlay.classList.remove('pointer-events-none', 'opacity-0');
+            overlay.classList.add('opacity-100');
+        }
+        function closeModal() {
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+        }
+        overlay.addEventListener('click', closeModal);
+
+        window.onload = () => { renderElements(1); };
+    </script>
+</body>
+</html>
